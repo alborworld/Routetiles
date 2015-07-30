@@ -1,3 +1,9 @@
+var p = [{lat:52.37965, lon:4.88658}, {lat:52.37645, lon:4.89474}, {lat:52.37404, lon:4.90023}, {lat:52.36890, lon:4.90577}];
+var zoom = 15;
+var path = "";
+
+const IMG_SIDE_PX = 256;
+
 function getMinEnclosingRectangle(points) {
   var lats = [];
   var longs = [];
@@ -19,6 +25,14 @@ function getMinEnclosingRectangle(points) {
 function long2tile(lon,zoom) { return (Math.floor((lon + 180)/360 * Math.pow(2, zoom))); }
 function lat2tile(lat,zoom)  { return (Math.floor((1 - Math.log(Math.tan(lat * Math.PI/180) + 1 / Math.cos(lat * Math.PI/180))/Math.PI)/2 * Math.pow(2, zoom))); }
 
+function tileSizeDeg(zoom) {
+  if (zoom >= 0 && zoom <= 19) {
+    return {lats: 360 / Math.pow(2, zoom), longs: 170.1022 / Math.pow(2, zoom)};
+  } else {
+    return null;
+  }
+}
+
 function downloadTile(zoom, tileX, tileY, path) {
   var http = require('http');
   var fs = require('fs');
@@ -30,10 +44,6 @@ function downloadTile(zoom, tileX, tileY, path) {
     response.pipe(file);
   });
 }
-
-var p = [{lat:52.37965, lon:4.88658}, {lat:52.37645, lon:4.89474}, {lat:52.37404, lon:4.90023}, {lat:52.36890, lon:4.90577}];
-var zoom = 15;
-var path = "";
 
 var rectangle = getMinEnclosingRectangle(p);
 
