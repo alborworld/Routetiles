@@ -37,8 +37,18 @@ function tileSizeDeg(zoom) {
   }
 }
 
-function getBestZoomLevel(widthDeg, heightDeg) {
-  // TODO
+function getBestZoomLevel(rectangle) {
+  var bestZoom = 0;
+
+  for (var zoom = 0; zoom <= 19; zoom++) {
+    var tileSize = tileSizeDeg(zoom);
+
+    if (tileSize.lats * 3 >= rectangle.height || tileSize.longs * 3 >= rectangle.width) {
+      bestZoom = zoom;
+    }
+  }
+
+  return bestZoom;
 }
 
 
@@ -58,8 +68,9 @@ var rectangle = getMinEnclosingRectangle(p);
 
 console.log(rectangle);
 
-// var zoom = getBestZoomLevel(rectangle);
-var zoom = 15;
+var zoom = getBestZoomLevel(rectangle);
+
+console.log("Zoom level: " + zoom);
 
 var minX = lat2tile(rectangle.max.lat, zoom);
 var minY = long2tile(rectangle.min.lon, zoom);
