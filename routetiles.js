@@ -18,7 +18,12 @@ function getMinEnclosingRectangle(points) {
   var maxLat = Math.max.apply(Math, lats);
   var maxLon = Math.max.apply(Math, longs);
 
-  return {min:{lat:minLat, lon:minLon}, max:{lat:maxLat, lon:maxLon}};
+  return {
+    min:{lat:minLat, lon:minLon},
+    max:{lat:maxLat, lon:maxLon},
+    width: Math.abs(maxLon - minLon),
+    height: Math.abs(maxLat - minLat)
+  };
 }
 
 // See http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
@@ -32,6 +37,11 @@ function tileSizeDeg(zoom) {
     return null;
   }
 }
+
+function getBestZoomLevel(widthDeg, heightDeg) {
+  // TODO
+}
+
 
 function downloadTile(zoom, tileX, tileY, path) {
   var http = require('http');
@@ -65,5 +75,7 @@ for (var x = minX; x <= maxX; x++) {
     downloadTile(zoom, y, x, path);
   }
 }
+
+// TODO Merge tiles
 
 //downloadTile(17, long2tile(13.37771496361961, 17), lat2tile(52.51628011262304, 17), "")
