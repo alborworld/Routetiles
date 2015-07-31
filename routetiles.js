@@ -1,5 +1,4 @@
 var p = [{lat:52.37965, lon:4.88658}, {lat:52.37645, lon:4.89474}, {lat:52.37404, lon:4.90023}, {lat:52.36890, lon:4.90577}];
-var zoom = 15;
 var path = "";
 
 const IMG_SIDE_PX = 256;
@@ -58,6 +57,9 @@ function downloadTile(zoom, tileX, tileY, path) {
 var rectangle = getMinEnclosingRectangle(p);
 
 console.log(rectangle);
+
+// var zoom = getBestZoomLevel(rectangle);
+var zoom = 15;
 
 var minX = lat2tile(rectangle.max.lat, zoom);
 var minY = long2tile(rectangle.min.lon, zoom);
