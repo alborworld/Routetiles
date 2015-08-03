@@ -1,16 +1,17 @@
 // It requires graphicsmagick
 // $ sudo npm install -g gm
-// $ brew install graphicsmacick
+// $ brew install graphicsmagick
 
 var http = require('http');
 var fs = require('fs');
-var graphicsmagick = require('gm'); // sudo npm install -g gm
+var graphicsmagick = require('gm');
 
 var p = [{lat:58.37965, lon:4.88658}, {lat:52.37645, lon:4.89474}, {lat:63.37404, lon:4.90023}, {lat:49.36890, lon:4.90577}];
-var path = "";
+var tmpPath = "/tmp/";
 var imageName = "routeMap.png";
+var imagePath = "";
 
-var MAX_TILES_PER_SIDE = 3;
+var TILES_PER_SIDE = 3;
 
 function getMinEnclosingRectangle(points) {
   var lats = [];
@@ -81,7 +82,7 @@ function getBestZoomLevel(rectangle) {
 
   for (var zoom = 0; zoom <= 19; zoom++) {
     var tileCoordinates = getTileCoordinates(rectangle, zoom);
-    if (tileCoordinates.xTilesNum <= MAX_TILES_PER_SIDE && tileCoordinates.yTilesNum <= MAX_TILES_PER_SIDE) {
+    if (tileCoordinates.xTilesNum <= TILES_PER_SIDE && tileCoordinates.yTilesNum <= TILES_PER_SIDE) {
       bestZoom = zoom;
     }
   }
@@ -121,12 +122,12 @@ for (var x = tileCoordinates.min.x, i = 0; x <= tileCoordinates.max.x; x++, i +=
   // TODO FIX max min
   for (var y = tileCoordinates.max.y, j = 0; y <= tileCoordinates.min.y; y++, j += 256) {
     console.log("x: " + x + ", y: " + y);
-    tileName = downloadTile(zoom, x, y, path);
-    gm = gm.in('-page', '+' + i + '+' + j).in(path + tileName);
+    tileName = downloadTile(zoom, x, y, tmpPath);
+    gm = gm.in('-page', '+' + i + '+' + j).in(tmpPath + tileName);
   }
 }
 
 gm.mosaic()  // Merges the images as a matrix
-    .write(path + imageName, function (err) {
+    .write(imagePath + imageName, function (err) {
         if (err) console.log(err);
     });
