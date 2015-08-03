@@ -6,10 +6,10 @@ var http = require('http');
 var fs = require('fs');
 var graphicsmagick = require('gm');
 
-var p = [{lat:58.37965, lon:4.88658}, {lat:52.37645, lon:4.89474}, {lat:63.37404, lon:4.90023}, {lat:49.36890, lon:4.90577}];
-var tmpPath = "/tmp/";
-var imageName = "routeMap.png";
-var imagePath = "";
+var points = [{lat:58.37965, lon:4.88658}, {lat:52.37645, lon:4.89474}, {lat:63.37404, lon:4.90023}, {lat:49.36890, lon:4.90577}];
+var tmpPath = "/tmp";
+var mapName = "routeMap.png";
+var mapPath = "";
 
 var TILES_PER_SIDE = 3;
 
@@ -45,9 +45,9 @@ function absDiff(one, two) {
 
 function getTileCoordinates(rectangle, zoom) {
   var minXtile = lon2tileX(rectangle.min.lon, zoom);
-  var minYtile = lat2tileY(rectangle.min.lat, zoom);
+  var minYtile = lat2tileY(rectangle.max.lat, zoom); // latitude and Y are opposite in direction
   var maxXtile = lon2tileX(rectangle.max.lon, zoom);
-  var maxYtile = lat2tileY(rectangle.max.lat, zoom);
+  var maxYtile = lat2tileY(rectangle.min.lat, zoom);
   var xTilesNum = absDiff(maxXtile, minXtile);
   var yTilesNum = absDiff(maxYtile, minYtile);
 
@@ -76,7 +76,6 @@ function getTileCoordinates(rectangle, zoom) {
   }
 }
 
-// IMPROVE
 function getBestZoomLevel(rectangle) {
   var bestZoom = 0;
 
@@ -92,7 +91,7 @@ function getBestZoomLevel(rectangle) {
 
 function downloadTile(zoom, tileX, tileY, path) {
   var tileName =  tileX + "_" + tileY + "_" + zoom + ".png";
-  var file = fs.createWriteStream(path + tileName);
+  var file = fs.createWriteStream(absolutePath(tileName, path));
   var request = http.get("http://tile.openstreetmap.org/" + zoom + "/" + tileX + "/" + tileY + ".png", function(response) {
     response.pipe(file);
   });
@@ -100,7 +99,11 @@ function downloadTile(zoom, tileX, tileY, path) {
   return tileName;
 }
 
-var rectangle = getMinEnclosingRectangle(p);
+function absolutePath(name, path) {
+  return path + "/" + name;
+}
+
+var rectangle = getMinEnclosingRectangle(points);
 
 console.log(rectangle);
 
@@ -119,15 +122,14 @@ console.log("maxYtile: " + tileCoordinates.max.y);
 var gm = graphicsmagick();
 
 for (var x = tileCoordinates.min.x, i = 0; x <= tileCoordinates.max.x; x++, i += 256) {
-  // TODO FIX max min
-  for (var y = tileCoordinates.max.y, j = 0; y <= tileCoordinates.min.y; y++, j += 256) {
+  for (var y = tileCoordinates.min.y, j = 0; y <= tileCoordinates.max.y; y++, j += 256) {
     console.log("x: " + x + ", y: " + y);
     tileName = downloadTile(zoom, x, y, tmpPath);
-    gm = gm.in('-page', '+' + i + '+' + j).in(tmpPath + tileName);
+    gm = gm.in('-page', '+' + i + '+' + j).in(absolutePath(tileName, tmpPath));
   }
 }
 
 gm.mosaic()  // Merges the images as a matrix
-    .write(imagePath + imageName, function (err) {
+    .write(absolutePath(mapName, mapPath), function (err) {
         if (err) console.log(err);
     });
