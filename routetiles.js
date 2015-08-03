@@ -1,8 +1,14 @@
+// It requires graphicsmagick
+// $ sudo npm install -g gm
+// $ brew install graphicsmacick
+
 var http = require('http');
 var fs = require('fs');
+var graphicsmagick = require('gm'); // sudo npm install -g gm
 
 var p = [{lat:58.37965, lon:4.88658}, {lat:52.37645, lon:4.89474}, {lat:63.37404, lon:4.90023}, {lat:49.36890, lon:4.90577}];
 var path = "";
+var imageName = "routeMap.png";
 
 var MAX_TILES_PER_SIDE = 3;
 
@@ -84,12 +90,13 @@ function getBestZoomLevel(rectangle) {
 }
 
 function downloadTile(zoom, tileX, tileY, path) {
-  var fileName =  tileX + "_" + tileY + "_" + zoom + ".png";
-
-  var file = fs.createWriteStream(path + fileName);
+  var tileName =  tileX + "_" + tileY + "_" + zoom + ".png";
+  var file = fs.createWriteStream(path + tileName);
   var request = http.get("http://tile.openstreetmap.org/" + zoom + "/" + tileX + "/" + tileY + ".png", function(response) {
     response.pipe(file);
   });
+
+  return tileName;
 }
 
 var rectangle = getMinEnclosingRectangle(p);
@@ -107,14 +114,19 @@ console.log("minYtile: " + tileCoordinates.min.y);
 console.log("maxXtile: " + tileCoordinates.max.x);
 console.log("maxYtile: " + tileCoordinates.max.y);
 
-for (var x = tileCoordinates.min.x; x <= tileCoordinates.max.x; x++) {
+// http://stackoverflow.com/questions/17369842/tile-four-images-together-using-node-js-and-graphicsmagick
+var gm = graphicsmagick();
+
+for (var x = tileCoordinates.min.x, i = 0; x <= tileCoordinates.max.x; x++, i += 256) {
   // TODO FIX max min
-  for (var y = tileCoordinates.max.y; y <= tileCoordinates.min.y; y++) {
+  for (var y = tileCoordinates.max.y, j = 0; y <= tileCoordinates.min.y; y++, j += 256) {
     console.log("x: " + x + ", y: " + y);
-    downloadTile(zoom, x, y, path);
+    tileName = downloadTile(zoom, x, y, path);
+    gm = gm.in('-page', '+' + i + '+' + j).in(path + tileName);
   }
 }
 
-// TODO Merge tiles
-
-//downloadTile(17, long2tile(13.37771496361961, 17), lat2tile(52.51628011262304, 17), "")
+gm.mosaic()  // Merges the images as a matrix
+    .write(path + imageName, function (err) {
+        if (err) console.log(err);
+    });
