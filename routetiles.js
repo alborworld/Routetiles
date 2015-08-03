@@ -100,7 +100,7 @@ function downloadTile(zoom, tileX, tileY, path) {
 }
 
 function absolutePath(name, path) {
-  return path + "/" + name;
+  return (path.length > 0) ? path + "/" + name : name;
 }
 
 var rectangle = getMinEnclosingRectangle(points);
