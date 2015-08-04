@@ -2,9 +2,8 @@
 // $ sudo npm install -g gm
 // $ brew install graphicsmagick
 
-var http = require('http');
-var fs = require('fs');
 var graphicsmagick = require('gm');
+var needle = require('needle');
 
 var points = [{lat:58.37965, lon:4.88658}, {lat:52.37645, lon:4.89474}, {lat:63.37404, lon:4.90023}, {lat:49.36890, lon:4.90577}];
 var tmpPath = "/tmp";
@@ -12,6 +11,7 @@ var mapName = "routeMap.png";
 var mapPath = "";
 
 var TILES_PER_SIDE = 3;
+var TILE_SERVER = "http://tile.openstreetmap.org/";
 
 function getMinEnclosingRectangle(points) {
   var lats = [];
@@ -91,9 +91,12 @@ function getBestZoomLevel(rectangle) {
 
 function downloadTile(zoom, tileX, tileY, path) {
   var tileName =  tileX + "_" + tileY + "_" + zoom + ".png";
-  var file = fs.createWriteStream(absolutePath(tileName, path));
-  var request = http.get("http://tile.openstreetmap.org/" + zoom + "/" + tileX + "/" + tileY + ".png", function(response) {
-    response.pipe(file);
+  var url = TILE_SERVER + zoom + "/" + tileX + "/" + tileY + ".png";
+
+  needle.get(url, { output: absolutePath(tileName, path) }, function(err, resp, body) {
+    if (err || resp.statusCode != 200) {
+      console.log("Error downloading tile (" + tileName + "): " + err)
+    }
   });
 
   return tileName;
