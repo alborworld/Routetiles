@@ -11,7 +11,7 @@ var mapName = "routeMap.png";
 var mapPath = "";
 
 var TILES_PER_SIDE = 3;
-var TILE_SERVER = "http://tile.openstreetmap.org/";
+var TILE_SERVER = "http://tile.openstreetmap.org";
 
 function getMinEnclosingRectangle(points) {
   var lats = [];
@@ -89,17 +89,17 @@ function getBestZoomLevel(rectangle) {
   return bestZoom;
 }
 
-function downloadTile(zoom, tileX, tileY, path) {
-  var tileName =  tileX + "_" + tileY + "_" + zoom + ".png";
-  var url = TILE_SERVER + zoom + "/" + tileX + "/" + tileY + ".png";
-
-  needle.get(url, { output: absolutePath(tileName, path) }, function(err, resp, body) {
-    if (err || resp.statusCode != 200) {
-      console.log("Error downloading tile (" + tileName + "): " + err)
-    }
-  });
-
-  return tileName;
+function downloadTile(zoom, tileX, tileY, tileFileName) {
+  return new Promise(function(resolve, reject) {
+    var url = TILE_SERVER + "/" + zoom + "/" + tileX + "/" + tileY + ".png";
+    needle.get(url, { output: tileFileName }, function(err, resp, body) {
+      if (!err && resp.statusCode === 200) {
+        resolve(resp);
+      } else {
+        reject("Error downloading tile (" + tileFileName + "): " + err)
+      }
+    });
+  })
 }
 
 function absolutePath(name, path) {
@@ -123,16 +123,21 @@ console.log("maxYtile: " + tileCoordinates.max.y);
 
 // http://stackoverflow.com/questions/17369842/tile-four-images-together-using-node-js-and-graphicsmagick
 var gm = graphicsmagick();
+var promises = [];
 
 for (var x = tileCoordinates.min.x, i = 0; x <= tileCoordinates.max.x; x++, i += 256) {
   for (var y = tileCoordinates.min.y, j = 0; y <= tileCoordinates.max.y; y++, j += 256) {
-    console.log("x: " + x + ", y: " + y);
-    tileName = downloadTile(zoom, x, y, tmpPath);
-    gm = gm.in('-page', '+' + i + '+' + j).in(absolutePath(tileName, tmpPath));
+    var tileFileName =  absolutePath(x + "_" + y + "_" + zoom + ".png", tmpPath);
+    promises.push(downloadTile(zoom, x, y, tileFileName));
+    gm = gm.in('-page', '+' + i + '+' + j).in(tileFileName);
   }
 }
 
-gm.mosaic()  // Merges the images as a matrix
+Promise.all(promises).then(function(value) {
+    gm.mosaic()  // Merges the images as a matrix
     .write(absolutePath(mapName, mapPath), function (err) {
         if (err) console.log(err);
-    });
+    })
+}).catch(function (reason) {
+    console.error(reason);
+})
