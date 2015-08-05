@@ -1,0 +1,13 @@
+.idea
+target
+bin
+*.iml
+*.iws
+*.ipr
+tmp
+*.pem
+*~
+nohup.out
+*.log
+node_modules
+
