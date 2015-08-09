@@ -10,4 +10,4 @@ tmp
 nohup.out
 *.log
 node_modules
-
+.tern-project
